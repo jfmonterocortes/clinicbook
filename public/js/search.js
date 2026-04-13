@@ -1,4 +1,4 @@
-<!--
+/*
   FILE        : search.js
   PROJECT     : SECU2000 – ClinicBook : Secure Clinic Booking System
   PROGRAMMER  : Juan Felipe Montero Cortes
@@ -9,7 +9,7 @@
     filtering by name and specialty, renders doctor cards, and opens a booking
     modal when the patient selects a doctor. On booking confirmation, posts
     the appointment to the API and redirects to the dashboard on success.
--->
+*/
 
 let selectedDoctorId = null;
 let bookModal = null;

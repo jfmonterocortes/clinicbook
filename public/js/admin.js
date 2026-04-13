@@ -1,4 +1,4 @@
-<!--
+/*
   FILE        : admin.js
   PROJECT     : SECU2000 – ClinicBook : Secure Clinic Booking System
   PROGRAMMER  : Juan Felipe Montero Cortes
@@ -9,7 +9,7 @@
     management (approve / suspend accounts), appointments overview, and the
     audit log viewer. All data rendered into the page is HTML-escaped through
     esc() to prevent stored XSS attacks.
--->
+*/
 
 //
 // FUNCTION    : init

@@ -1,4 +1,4 @@
-<!--
+/*
   FILE        : login.js
   PROJECT     : SECU2000 – ClinicBook : Secure Clinic Booking System
   PROGRAMMER  : Juan Felipe Montero Cortes
@@ -8,7 +8,7 @@
     users to their role-appropriate dashboard. On form submission, posts
     credentials to the API and either redirects on success or displays the
     error message returned by the server.
--->
+*/
 
 // Redirect to the correct dashboard if a session is already active
 fetch('/api/me').then(r => {

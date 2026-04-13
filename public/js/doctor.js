@@ -1,4 +1,4 @@
-<!--
+/*
   FILE        : doctor.js
   PROJECT     : SECU2000 – ClinicBook : Secure Clinic Booking System
   PROGRAMMER  : Juan Felipe Montero Cortes
@@ -8,7 +8,7 @@
     approved doctor on load, then fetches and renders the doctor's appointments
     and patient documents. Provides appointment status update controls
     (confirm, cancel, complete) and a status filter dropdown.
--->
+*/
 
 let allAppointments = [];
 

@@ -1,4 +1,4 @@
-<!--
+/*
   FILE        : dashboard.js
   PROJECT     : SECU2000 – ClinicBook : Secure Clinic Booking System
   PROGRAMMER  : Juan Felipe Montero Cortes
@@ -8,7 +8,7 @@
     patient on load, then fetches and renders the patient's appointments and
     uploaded documents. Provides cancel functionality for pending or confirmed
     appointments and a file upload form for medical documents.
--->
+*/
 
 let currentUser = null;
 

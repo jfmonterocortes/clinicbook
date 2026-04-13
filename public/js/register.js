@@ -1,4 +1,4 @@
-<!--
+/*
   FILE        : register.js
   PROJECT     : SECU2000 – ClinicBook : Secure Clinic Booking System
   PROGRAMMER  : Juan Felipe Montero Cortes
@@ -8,7 +8,7 @@
     group based on the selected role, then submits the registration request
     to the API. On success, displays a confirmation message and redirects to
     the login page. On failure, displays the server-returned error message.
--->
+*/
 
 //
 // FUNCTION    : role change handler
