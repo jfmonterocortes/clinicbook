@@ -47,7 +47,9 @@ app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 // Rejects requests that claim to send JSON but supply a different Content-Type,
 // preventing content-type confusion attacks on the API.
 app.use('/api', (req, res, next) => {
+    const hasBody = req.headers['content-length'] > 0 || req.headers['transfer-encoding'];
     if (['POST', 'PUT', 'PATCH'].includes(req.method) &&
+        hasBody &&
         !req.is('application/json') &&
         !req.is('multipart/form-data')) {
         return res.status(415).json({ error: 'Unsupported Media Type' });

@@ -172,6 +172,7 @@ async function loadDocuments() {
 }
 
 document.getElementById('statusFilter').addEventListener('change', renderAppointments);
+document.getElementById('refreshBtn').addEventListener('click', loadAppointments);
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     await fetch('/api/logout', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });

@@ -210,14 +210,15 @@ router.get('/', requireAuth, requireApproved, (req, res) => {
             return res.json({ documents: [] });
         }
 
-        // Doctors see documents linked to their appointments with the patient name
+        // Doctors see all documents uploaded by patients who have an appointment with them
         rows = db.prepare(`
-            SELECT d.id, d.original_name, d.mime_type, d.size, d.uploaded_at,
+            SELECT DISTINCT d.id, d.original_name, d.mime_type, d.size, d.uploaded_at,
                    d.appointment_id, u.full_name AS patient_name
             FROM documents d
-            JOIN appointments a ON a.id = d.appointment_id
             JOIN users u ON u.id = d.uploader_id
-            WHERE a.doctor_id = ?
+            WHERE d.uploader_id IN (
+                SELECT a.patient_id FROM appointments a WHERE a.doctor_id = ?
+            )
             ORDER BY d.uploaded_at DESC
         `).all(doctor.id);
     } else {
@@ -276,12 +277,12 @@ router.get(
             allowed = true; // patients can only access their own uploads
         } else if (role === 'doctor') {
             const doctor = db.prepare('SELECT id FROM doctors WHERE user_id = ?').get(userId);
-            if (doctor && doc.appointment_id) {
-                // doctors can only access documents linked to their appointments
-                const appt = db.prepare(
-                    'SELECT id FROM appointments WHERE id = ? AND doctor_id = ?'
-                ).get(doc.appointment_id, doctor.id);
-                if (appt) {
+            if (doctor) {
+                // doctors can access documents uploaded by any of their patients
+                const isPatient = db.prepare(
+                    'SELECT id FROM appointments WHERE patient_id = ? AND doctor_id = ? LIMIT 1'
+                ).get(doc.uploader_id, doctor.id);
+                if (isPatient) {
                     allowed = true;
                 }
             }

@@ -25,7 +25,7 @@
         <div id="alert" class="alert d-none" role="alert"></div>
 
         <!-- Filter -->
-        <div class="mb-3">
+        <div class="d-flex gap-2 mb-3">
             <select id="statusFilter" class="form-select" style="max-width:200px;">
                 <option value="">All Statuses</option>
                 <option value="pending">Pending</option>
@@ -33,6 +33,7 @@
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
             </select>
+            <button class="btn btn-outline-secondary btn-sm" id="refreshBtn">Refresh</button>
         </div>
 
         <div id="appointmentsContainer"><p class="text-muted">Loading...</p></div>
