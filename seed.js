@@ -122,4 +122,9 @@ async function seed() {
     console.log('  Patient — tom.brennan@outlook.com         / Brennan#77');
 }
 
-seed().catch(err => { console.error(err); process.exit(1); });
+// Run directly via `npm run seed`, or export for auto-seeding on Vercel
+if (require.main === module) {
+    seed().catch(err => { console.error(err); process.exit(1); });
+}
+
+module.exports = seed;

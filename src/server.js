@@ -90,6 +90,11 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 
+// ---------- Presentation slide deck ----------
+app.get('/presentation', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'docs', 'presentation.html'));
+});
+
 // ---------- SPA fallback: serve index.html for any non-API route ----------
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
@@ -102,7 +107,17 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'An unexpected error occurred' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Clinic Booking System running on http://localhost:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+
+    // On Vercel, auto-seed the database on cold start if it is empty
+    if (process.env.VERCEL) {
+        const count = db.prepare('SELECT COUNT(*) as n FROM users').get();
+        if (count.n === 0) {
+            console.log('Empty database detected - running auto-seed...');
+            await require('../seed')();
+            console.log('Auto-seed complete.');
+        }
+    }
 });

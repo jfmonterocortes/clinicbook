@@ -27,7 +27,15 @@ const { log } = require('../middleware/audit');
 const router = express.Router();
 
 // Directory where uploaded files are stored (outside public/ – not web-accessible)
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+// On Vercel, /tmp is the only writable directory
+const UPLOAD_DIR = process.env.VERCEL
+    ? '/tmp/uploads'
+    : path.join(__dirname, '..', '..', 'uploads');
+
+// Ensure the upload directory exists (important on Vercel where /tmp is empty on cold start)
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 // Whitelist of allowed MIME types and file extensions checked independently
 const ALLOWED_MIMES = ['application/pdf', 'image/png', 'image/jpeg'];
