@@ -18,7 +18,7 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { param } = require('express-validator');
-const { fileTypeFromBuffer } = require('file-type');
+const FileType = require('file-type');
 const db = require('../db');
 const { requireAuth, requireApproved, requireRole } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
@@ -135,7 +135,7 @@ router.post(
             fs.readSync(fd, buf, 0, 4100, 0);
             fs.closeSync(fd);
 
-            const detected = await fileTypeFromBuffer(buf);
+            const detected = await FileType.fromBuffer(buf);
             if (!detected || !ALLOWED_MIMES.includes(detected.mime)) {
                 fs.unlinkSync(req.file.path); // remove the rejected file from disk
                 return res.status(400).json({ error: 'File content does not match its declared type' });
