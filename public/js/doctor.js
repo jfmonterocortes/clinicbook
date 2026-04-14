@@ -76,7 +76,7 @@ function renderAppointments() {
 
     let html = '<div class="row g-3">';
     appts.forEach(a => {
-        const date = new Date(a.scheduled_at).toLocaleString();
+        const date = new Date(a.scheduled_at.replace(' ', 'T') + 'Z').toLocaleString();
 
         html += `
             <div class="col-md-6">
@@ -162,7 +162,7 @@ async function loadDocuments() {
             <div class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
                     <div>${esc(d.original_name)}</div>
-                    <div class="text-muted small">Patient: ${esc(d.patient_name)} &nbsp;|&nbsp; ${new Date(d.uploaded_at).toLocaleDateString()}</div>
+                    <div class="text-muted small">Patient: ${esc(d.patient_name)} &nbsp;|&nbsp; ${new Date(d.uploaded_at.replace(' ', 'T') + 'Z').toLocaleDateString()}</div>
                 </div>
                 <a href="/api/uploads/${d.id}/download" class="btn btn-sm btn-outline-primary">Download</a>
             </div>`;

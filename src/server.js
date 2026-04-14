@@ -100,7 +100,10 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ---------- Presentation slide deck ----------
+// The presentation is a self-contained HTML file with inline JS — override
+// the default strict CSP so the slide navigation scripts are allowed to run.
 app.get('/presentation', (req, res) => {
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:");
     res.sendFile(path.join(__dirname, '..', 'docs', 'presentation.html'));
 });
 

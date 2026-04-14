@@ -61,7 +61,7 @@ async function loadAppointments() {
 
     let html = '<div class="row g-3">';
     data.appointments.forEach(a => {
-        const date = new Date(a.scheduled_at).toLocaleString();
+        const date = new Date(a.scheduled_at.replace(' ', 'T') + 'Z').toLocaleString();
         const badgeClass = `badge-${a.status}`;
 
         html += `

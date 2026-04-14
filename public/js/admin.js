@@ -153,7 +153,7 @@ async function loadAppointments() {
             <td>${esc(a.patient_name)}</td>
             <td>Dr. ${esc(a.doctor_name)}</td>
             <td>${esc(a.specialty)}</td>
-            <td>${new Date(a.scheduled_at).toLocaleString()}</td>
+            <td>${new Date(a.scheduled_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>
             <td><span class="badge bg-secondary">${a.status}</span></td>`;
         tbody.appendChild(row);
     });
@@ -180,7 +180,7 @@ async function loadAudit() {
         const row = document.createElement('tr');
         row.className = 'log-row';
         row.innerHTML = `
-            <td>${new Date(l.created_at).toLocaleString()}</td>
+            <td>${new Date(l.created_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>
             <td>${l.full_name ? esc(l.full_name) : '<em class="text-muted">unknown</em>'}</td>
             <td><code>${esc(l.action)}</code></td>
             <td>${l.ip || '—'}</td>
