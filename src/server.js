@@ -11,7 +11,7 @@
 
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const helmet = require('helmet');
 const path = require('path');
 
@@ -72,20 +72,15 @@ app.use('/api', (req, res, next) => {
 });
 
 // ---------- Session ----------
-const sessionStore = new (require('better-sqlite3-session-store')(session))({ client: db });
-
-app.use(session({
-    store: sessionStore,
-    secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 2 * 60 * 60 * 1000, // 2 hours
-    },
+// Cookie-based sessions: signed client-side cookie, no server storage needed.
+// This works correctly across multiple Vercel serverless instances.
+app.use(cookieSession({
     name: 'clinicsid',
+    keys: [process.env.SESSION_SECRET || 'dev-secret-change-in-production'],
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 2 * 60 * 60 * 1000, // 2 hours
 }));
 
 // ---------- Trust proxy (needed for accurate IP behind nginx/etc) ----------

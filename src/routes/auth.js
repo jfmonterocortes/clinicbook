@@ -163,33 +163,28 @@ router.post(
             return res.status(403).json({ error: 'Your account is pending admin approval' });
         }
 
-        /* Regenerate the session ID before writing user data to prevent
-         * session fixation – an attacker who obtained the pre-login session
-         * ID cannot use it after a successful login. */
-        req.session.regenerate((err) => {
-            if (err) {
-                return res.status(500).json({ error: 'Login failed. Please try again.' });
-            }
+        /* Clear any existing session data before writing new user data to
+         * prevent session fixation. With cookie-session there is no server-side
+         * session ID to regenerate, so wiping the object achieves the same goal. */
+        req.session = {};
+        req.session.user = {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            full_name: user.full_name,
+            is_approved: user.is_approved,
+        };
 
-            req.session.user = {
+        log(user.id, 'LOGIN_SUCCESS', ip, ua);
+
+        res.json({
+            message: 'Login successful',
+            user: {
                 id: user.id,
                 email: user.email,
                 role: user.role,
                 full_name: user.full_name,
-                is_approved: user.is_approved,
-            };
-
-            log(user.id, 'LOGIN_SUCCESS', ip, ua);
-
-            res.json({
-                message: 'Login successful',
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    role: user.role,
-                    full_name: user.full_name,
-                },
-            });
+            },
         });
     }
 );
@@ -209,16 +204,11 @@ router.post('/logout', (req, res) => {
     const ip = req.ip;
     const ua = req.headers['user-agent'];
 
-    req.session.destroy((err) => {
-        if (err) {
-            console.error('[auth] Session destroy error:', err.message);
-        }
-        if (userId) {
-            log(userId, 'LOGOUT', ip, ua);
-        }
-        res.clearCookie('clinicsid');
-        res.json({ message: 'Logged out successfully' });
-    });
+    req.session = null; // clears the cookie-session
+    if (userId) {
+        log(userId, 'LOGOUT', ip, ua);
+    }
+    res.json({ message: 'Logged out successfully' });
 });
 
 //
