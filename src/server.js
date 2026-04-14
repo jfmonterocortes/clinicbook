@@ -26,6 +26,20 @@ const { loginLimiter, registerLimiter, apiLimiter } = require('./middleware/rate
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// On Vercel, seed the database at module load time (before any request arrives).
+// app.listen() callbacks are not reliable in serverless environments.
+let seedReady = Promise.resolve();
+if (process.env.VERCEL) {
+    const count = db.prepare('SELECT COUNT(*) as n FROM users').get();
+    if (count.n === 0) {
+        console.log('Empty database detected - running auto-seed...');
+        seedReady = require('../seed')().then(() => console.log('Auto-seed complete.'));
+    }
+}
+
+// Block all requests until seeding is done (only relevant on cold start)
+app.use((req, res, next) => seedReady.then(next).catch(next));
+
 // ---------- Security headers ----------
 app.use(helmet({
     contentSecurityPolicy: {
@@ -107,17 +121,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'An unexpected error occurred' });
 });
 
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
     console.log(`Clinic Booking System running on http://localhost:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-
-    // On Vercel, auto-seed the database on cold start if it is empty
-    if (process.env.VERCEL) {
-        const count = db.prepare('SELECT COUNT(*) as n FROM users').get();
-        if (count.n === 0) {
-            console.log('Empty database detected - running auto-seed...');
-            await require('../seed')();
-            console.log('Auto-seed complete.');
-        }
-    }
 });
