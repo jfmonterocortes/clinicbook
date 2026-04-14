@@ -29,6 +29,7 @@ async function init() {
         return;
     }
     document.getElementById('userName').textContent = me.user.full_name;
+    loadStats();
     loadUsers();
 }
 
@@ -48,6 +49,8 @@ document.querySelectorAll('[data-tab]').forEach(link => {
             loadUsers();
         } else if (tab === 'appointments') {
             loadAppointments();
+        } else if (tab === 'documents') {
+            loadDocuments();
         } else if (tab === 'audit') {
             loadAudit();
         }
@@ -141,20 +144,87 @@ async function toggleApproval(userId, approve) {
 // RETURNS     :
 //   void (async)
 //
+async function loadStats() {
+    const data = await fetch('/api/admin/stats').then(r => r.json()).catch(() => null);
+    if (!data) return;
+    document.getElementById('statPatients').textContent = data.patients;
+    document.getElementById('statPending').textContent = data.pending_doctors;
+    document.getElementById('statAppointments').textContent = data.appointments;
+    document.getElementById('statDocuments').textContent = data.documents;
+}
+
 async function loadAppointments() {
     const res = await fetch('/api/admin/appointments');
     const data = await res.json();
     const tbody = document.getElementById('appointmentsTable');
     tbody.innerHTML = '';
 
-    (data.appointments || []).forEach(a => {
+    const statusColors = { confirmed: 'success', pending: 'warning text-dark', completed: 'secondary', cancelled: 'danger' };
+
+    (data.appointments || []).forEach(appointment => {
+        const row = document.createElement('tr');
+        const badgeColor = statusColors[appointment.status] || 'secondary';
+        row.innerHTML = `
+            <td>${esc(appointment.patient_name)}</td>
+            <td>Dr. ${esc(appointment.doctor_name)}</td>
+            <td>${esc(appointment.specialty)}</td>
+            <td>${new Date(appointment.scheduled_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>
+            <td><span class="badge bg-${badgeColor}">${appointment.status}</span></td>
+            <td>
+                <select class="form-select form-select-sm d-inline-block w-auto" data-appt-id="${appointment.id}">
+                    <option value="">Change...</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </td>`;
+        tbody.appendChild(row);
+    });
+
+    tbody.querySelectorAll('select[data-appt-id]').forEach(statusSelect => {
+        statusSelect.addEventListener('change', async () => {
+            if (!statusSelect.value) return;
+            const response = await fetch(`/api/appointments/${statusSelect.dataset.apptId}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: statusSelect.value }),
+            });
+            const result = await response.json();
+            if (response.ok) {
+                showAlert('Status updated', 'success');
+                loadAppointments();
+                loadStats();
+            } else {
+                showAlert(result.error, 'danger');
+                statusSelect.value = '';
+            }
+        });
+    });
+}
+
+async function loadDocuments() {
+    const res = await fetch('/api/admin/documents');
+    const data = await res.json();
+    const tbody = document.getElementById('documentsTable');
+    tbody.innerHTML = '';
+
+    if (!data.documents || data.documents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No documents uploaded yet</td></tr>';
+        return;
+    }
+
+    data.documents.forEach(document => {
+        const fileSize = document.size < 1024 * 1024
+            ? (document.size / 1024).toFixed(1) + ' KB'
+            : (document.size / 1024 / 1024).toFixed(1) + ' MB';
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${esc(a.patient_name)}</td>
-            <td>Dr. ${esc(a.doctor_name)}</td>
-            <td>${esc(a.specialty)}</td>
-            <td>${new Date(a.scheduled_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>
-            <td><span class="badge bg-secondary">${a.status}</span></td>`;
+            <td>${esc(document.original_name)}</td>
+            <td>${esc(document.uploader_name)}</td>
+            <td>${esc(document.uploader_email)}</td>
+            <td><span class="badge bg-light text-dark">${esc(document.mime_type)}</span></td>
+            <td>${fileSize}</td>
+            <td>${new Date(document.uploaded_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>`;
         tbody.appendChild(row);
     });
 }
@@ -170,24 +240,41 @@ async function loadAppointments() {
 // RETURNS     :
 //   void (async)
 //
+let allLogs = [];
+
 async function loadAudit() {
     const res = await fetch('/api/admin/audit');
     const data = await res.json();
+    allLogs = data.logs || [];
+    renderAudit(allLogs);
+}
+
+function renderAudit(logs) {
     const tbody = document.getElementById('auditTable');
     tbody.innerHTML = '';
-
-    (data.logs || []).forEach(l => {
+    logs.forEach(logEntry => {
         const row = document.createElement('tr');
         row.className = 'log-row';
         row.innerHTML = `
-            <td>${new Date(l.created_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>
-            <td>${l.full_name ? esc(l.full_name) : '<em class="text-muted">unknown</em>'}</td>
-            <td><code>${esc(l.action)}</code></td>
-            <td>${l.ip || '—'}</td>
-            <td>${l.detail ? esc(l.detail) : '—'}</td>`;
+            <td>${new Date(logEntry.created_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>
+            <td>${logEntry.full_name ? esc(logEntry.full_name) : '<em class="text-muted">unknown</em>'}</td>
+            <td><code>${esc(logEntry.action)}</code></td>
+            <td>${logEntry.ip || '—'}</td>
+            <td>${logEntry.detail ? esc(logEntry.detail) : '—'}</td>`;
         tbody.appendChild(row);
     });
 }
+
+document.getElementById('auditFilter').addEventListener('input', function () {
+    const filterText = this.value.toLowerCase();
+    if (!filterText) { renderAudit(allLogs); return; }
+    renderAudit(allLogs.filter(logEntry =>
+        (logEntry.action && logEntry.action.toLowerCase().includes(filterText)) ||
+        (logEntry.full_name && logEntry.full_name.toLowerCase().includes(filterText)) ||
+        (logEntry.detail && logEntry.detail.toLowerCase().includes(filterText)) ||
+        (logEntry.ip && logEntry.ip.includes(filterText))
+    ));
+});
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     await fetch('/api/logout', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });

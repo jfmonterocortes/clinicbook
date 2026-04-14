@@ -19,12 +19,52 @@
     </nav>
 
     <div class="container py-4">
+
+        <!-- Stats Cards -->
+        <div class="row g-3 mb-4" id="statsRow">
+            <div class="col-6 col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="fs-2 fw-bold text-primary" id="statPatients">—</div>
+                        <div class="text-muted small">Patients</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="fs-2 fw-bold text-warning" id="statPending">—</div>
+                        <div class="text-muted small">Pending Doctors</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="fs-2 fw-bold text-success" id="statAppointments">—</div>
+                        <div class="text-muted small">Appointments</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="fs-2 fw-bold text-info" id="statDocuments">—</div>
+                        <div class="text-muted small">Documents</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <ul class="nav nav-tabs" id="adminTabs">
             <li class="nav-item">
                 <a class="nav-link active" href="#" data-tab="users">Users</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="#" data-tab="appointments">Appointments</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-tab="documents">Documents</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="#" data-tab="audit">Audit Log</a>
@@ -52,16 +92,33 @@
             <div class="table-responsive">
                 <table class="table table-sm table-hover bg-white rounded">
                     <thead class="table-light">
-                        <tr><th>Patient</th><th>Doctor</th><th>Specialty</th><th>Date</th><th>Status</th></tr>
+                        <tr><th>Patient</th><th>Doctor</th><th>Specialty</th><th>Date</th><th>Status</th><th>Action</th></tr>
                     </thead>
                     <tbody id="appointmentsTable"></tbody>
                 </table>
             </div>
         </div>
 
+        <!-- Documents Tab -->
+        <div id="tab-documents" class="tab-content d-none">
+            <h6>All Documents</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover bg-white rounded">
+                    <thead class="table-light">
+                        <tr><th>File Name</th><th>Uploaded By</th><th>Email</th><th>Type</th><th>Size</th><th>Uploaded At</th></tr>
+                    </thead>
+                    <tbody id="documentsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Audit Tab -->
         <div id="tab-audit" class="tab-content d-none">
-            <h6>Audit Log <span class="text-muted small">(last 200 entries)</span></h6>
+            <div class="d-flex align-items-center justify-content-between mb-2 mt-3">
+                <h6 class="mb-0">Audit Log <span class="text-muted small">(last 200 entries)</span></h6>
+                <input type="text" id="auditFilter" class="form-control form-control-sm w-auto"
+                       placeholder="Filter by action or user..." style="min-width:220px;">
+            </div>
             <div class="table-responsive">
                 <table class="table table-sm table-hover bg-white rounded">
                     <thead class="table-light">

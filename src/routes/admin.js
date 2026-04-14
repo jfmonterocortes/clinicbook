@@ -145,4 +145,40 @@ router.get('/audit', (req, res) => {
     res.json({ logs: rows });
 });
 
+//
+// FUNCTION    : GET /api/admin/stats
+// DESCRIPTION :
+//   Returns summary counts used by the admin dashboard stat cards.
+// RETURNS     :
+//   200 JSON : { patients, pending_doctors, appointments, documents }
+//
+router.get('/stats', (req, res) => {
+    const stats = db.prepare(`
+        SELECT
+            (SELECT COUNT(*) FROM users WHERE role = 'patient') AS patients,
+            (SELECT COUNT(*) FROM users WHERE role = 'doctor' AND is_approved = 0) AS pending_doctors,
+            (SELECT COUNT(*) FROM appointments) AS appointments,
+            (SELECT COUNT(*) FROM documents) AS documents
+    `).get();
+    res.json(stats);
+});
+
+//
+// FUNCTION    : GET /api/admin/documents
+// DESCRIPTION :
+//   Returns all uploaded documents with uploader details.
+// RETURNS     :
+//   200 JSON : { documents: [ { id, original_name, mime_type, size, uploaded_at, uploader_name, uploader_email } ] }
+//
+router.get('/documents', (req, res) => {
+    const rows = db.prepare(`
+        SELECT d.id, d.original_name, d.mime_type, d.size, d.uploaded_at,
+               u.full_name AS uploader_name, u.email AS uploader_email
+        FROM documents d
+        JOIN users u ON u.id = d.uploader_id
+        ORDER BY d.uploaded_at DESC
+    `).all();
+    res.json({ documents: rows });
+});
+
 module.exports = router;
