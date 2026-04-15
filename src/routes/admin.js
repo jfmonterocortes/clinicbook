@@ -14,14 +14,15 @@
 const express = require('express');
 const { param, body } = require('express-validator');
 const db = require('../db');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requireApproved, requireRole } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
 const { log } = require('../middleware/audit');
 
 const router = express.Router();
 
 // Apply authentication and admin role check to every route in this file
-router.use(requireAuth, requireRole('admin'));
+// Apply auth to all admin routes; the patients list is also needed by doctors
+router.use(requireAuth, requireApproved);
 
 //
 // FUNCTION    : GET /api/admin/users
@@ -36,7 +37,24 @@ router.use(requireAuth, requireRole('admin'));
 //   401 JSON : not authenticated
 //   403 JSON : not an admin
 //
-router.get('/users', (req, res) => {
+//
+// FUNCTION    : GET /api/admin/patients
+// DESCRIPTION :
+//   Returns all approved patient accounts. Used by doctor and admin booking
+//   forms to populate the patient dropdown. Accessible to doctors and admins.
+// RETURNS     :
+//   200 JSON : { patients: [ { id, full_name, email } ] }
+//
+router.get('/patients', requireRole('doctor', 'admin'), (req, res) => {
+    const patients = db.prepare(`
+        SELECT id, full_name, email FROM users
+        WHERE role = 'patient' AND is_approved = 1
+        ORDER BY full_name ASC
+    `).all();
+    res.json({ patients });
+});
+
+router.get('/users', requireRole('admin'), (req, res) => {
     const users = db.prepare(`
         SELECT u.id, u.email, u.full_name, u.role, u.is_approved, u.created_at,
                d.specialty, d.license_number
@@ -65,6 +83,7 @@ router.get('/users', (req, res) => {
 //
 router.patch(
     '/users/:id/approve',
+    requireRole('admin'),
     [
         param('id').isInt({ min: 1 }),
         body('approved').isBoolean().withMessage('approved must be true or false'),
@@ -106,7 +125,7 @@ router.patch(
 //   401 JSON : not authenticated
 //   403 JSON : not an admin
 //
-router.get('/appointments', (req, res) => {
+router.get('/appointments', requireRole('admin'), (req, res) => {
     const rows = db.prepare(`
         SELECT a.id, a.scheduled_at, a.status, a.notes, a.created_at,
                pu.full_name AS patient_name, pu.email AS patient_email,
@@ -133,7 +152,7 @@ router.get('/appointments', (req, res) => {
 //   401 JSON : not authenticated
 //   403 JSON : not an admin
 //
-router.get('/audit', (req, res) => {
+router.get('/audit', requireRole('admin'), (req, res) => {
     const rows = db.prepare(`
         SELECT al.id, al.action, al.ip, al.detail, al.created_at,
                u.full_name, u.email
@@ -152,7 +171,7 @@ router.get('/audit', (req, res) => {
 // RETURNS     :
 //   200 JSON : { patients, pending_doctors, appointments, documents }
 //
-router.get('/stats', (req, res) => {
+router.get('/stats', requireRole('admin'), (req, res) => {
     const stats = db.prepare(`
         SELECT
             (SELECT COUNT(*) FROM users WHERE role = 'patient') AS patients,
@@ -170,7 +189,7 @@ router.get('/stats', (req, res) => {
 // RETURNS     :
 //   200 JSON : { documents: [ { id, original_name, mime_type, size, uploaded_at, uploader_name, uploader_email } ] }
 //
-router.get('/documents', (req, res) => {
+router.get('/documents', requireRole('admin'), (req, res) => {
     const rows = db.prepare(`
         SELECT d.id, d.original_name, d.mime_type, d.size, d.uploaded_at,
                u.full_name AS uploader_name, u.email AS uploader_email

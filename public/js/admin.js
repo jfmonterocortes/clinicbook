@@ -31,6 +31,7 @@ async function init() {
     document.getElementById('userName').textContent = me.user.full_name;
     loadStats();
     loadUsers();
+    loadBookingDropdowns();
 }
 
 /* Tab switching – show the selected panel and hide all others,
@@ -86,14 +87,14 @@ async function loadUsers() {
             <td>${esc(u.full_name)}</td>
             <td>${esc(u.email)}</td>
             <td><span class="badge bg-secondary">${u.role}</span></td>
-            <td>${u.specialty ? esc(u.specialty) : '—'}</td>
+            <td>${u.specialty ? esc(u.specialty) : '-'}</td>
             <td><span class="badge bg-${badgeClass}">${approved}</span></td>
             <td>
                 ${u.role !== 'admin' ? `
                 <button class="btn btn-sm ${u.is_approved ? 'btn-outline-danger' : 'btn-outline-success'}"
                         data-user-id="${u.id}" data-approve="${u.is_approved ? 'false' : 'true'}">
                     ${u.is_approved ? 'Suspend' : 'Approve'}
-                </button>` : '—'}
+                </button>` : '-'}
             </td>`;
         tbody.appendChild(row);
     });
@@ -213,18 +214,19 @@ async function loadDocuments() {
         return;
     }
 
-    data.documents.forEach(document => {
-        const fileSize = document.size < 1024 * 1024
-            ? (document.size / 1024).toFixed(1) + ' KB'
-            : (document.size / 1024 / 1024).toFixed(1) + ' MB';
+    data.documents.forEach(uploadedFile => {
+        const fileSize = uploadedFile.size < 1024 * 1024
+            ? (uploadedFile.size / 1024).toFixed(1) + ' KB'
+            : (uploadedFile.size / 1024 / 1024).toFixed(1) + ' MB';
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${esc(document.original_name)}</td>
-            <td>${esc(document.uploader_name)}</td>
-            <td>${esc(document.uploader_email)}</td>
-            <td><span class="badge bg-light text-dark">${esc(document.mime_type)}</span></td>
+            <td>${esc(uploadedFile.original_name)}</td>
+            <td>${esc(uploadedFile.uploader_name)}</td>
+            <td>${esc(uploadedFile.uploader_email)}</td>
+            <td><span class="badge bg-light text-dark">${esc(uploadedFile.mime_type)}</span></td>
             <td>${fileSize}</td>
-            <td>${new Date(document.uploaded_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>`;
+            <td>${new Date(uploadedFile.uploaded_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>
+            <td><a href="/api/uploads/${uploadedFile.id}/download" class="btn btn-sm btn-outline-primary">Download</a></td>`;
         tbody.appendChild(row);
     });
 }
@@ -259,8 +261,8 @@ function renderAudit(logs) {
             <td>${new Date(logEntry.created_at.replace(' ', 'T') + 'Z').toLocaleString()}</td>
             <td>${logEntry.full_name ? esc(logEntry.full_name) : '<em class="text-muted">unknown</em>'}</td>
             <td><code>${esc(logEntry.action)}</code></td>
-            <td>${logEntry.ip || '—'}</td>
-            <td>${logEntry.detail ? esc(logEntry.detail) : '—'}</td>`;
+            <td>${logEntry.ip || '-'}</td>
+            <td>${logEntry.detail ? esc(logEntry.detail) : '-'}</td>`;
         tbody.appendChild(row);
     });
 }
@@ -274,6 +276,72 @@ document.getElementById('auditFilter').addEventListener('input', function () {
         (logEntry.detail && logEntry.detail.toLowerCase().includes(filterText)) ||
         (logEntry.ip && logEntry.ip.includes(filterText))
     ));
+});
+
+async function loadBookingDropdowns() {
+    const [patientsResponse, doctorsResponse] = await Promise.all([
+        fetch('/api/admin/patients').then(r => r.json()).catch(() => null),
+        fetch('/api/doctors').then(r => r.json()).catch(() => null),
+    ]);
+
+    const patientSelect = document.getElementById('bookPatient');
+    (patientsResponse?.patients || []).forEach(patient => {
+        const option = document.createElement('option');
+        option.value = patient.id;
+        option.textContent = `${patient.full_name} (${patient.email})`;
+        patientSelect.appendChild(option);
+    });
+
+    const doctorSelect = document.getElementById('bookDoctor');
+    (doctorsResponse?.doctors || []).forEach(doctor => {
+        const option = document.createElement('option');
+        option.value = doctor.id;
+        option.textContent = `Dr. ${doctor.full_name} - ${doctor.specialty}`;
+        doctorSelect.appendChild(option);
+    });
+}
+
+document.getElementById('bookSubmitBtn').addEventListener('click', async () => {
+    const patientId = document.getElementById('bookPatient').value;
+    const doctorId = document.getElementById('bookDoctor').value;
+    const scheduledAt = document.getElementById('bookDate').value;
+    const notes = document.getElementById('bookNotes').value.trim();
+    const alertEl = document.getElementById('bookAlert');
+
+    if (!patientId || !doctorId || !scheduledAt) {
+        alertEl.className = 'alert alert-danger';
+        alertEl.textContent = 'Please fill in all required fields.';
+        alertEl.classList.remove('d-none');
+        return;
+    }
+
+    const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            patient_id: parseInt(patientId),
+            doctor_id: parseInt(doctorId),
+            scheduled_at: scheduledAt,
+            notes: notes || undefined,
+        }),
+    });
+    const result = await response.json();
+
+    if (response.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('bookModal')).hide();
+        document.getElementById('bookPatient').value = '';
+        document.getElementById('bookDoctor').value = '';
+        document.getElementById('bookDate').value = '';
+        document.getElementById('bookNotes').value = '';
+        alertEl.classList.add('d-none');
+        showAlert('Appointment booked successfully', 'success');
+        loadAppointments();
+        loadStats();
+    } else {
+        alertEl.className = 'alert alert-danger';
+        alertEl.textContent = result.error || 'Booking failed';
+        alertEl.classList.remove('d-none');
+    }
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {

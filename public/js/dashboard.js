@@ -52,7 +52,7 @@ async function loadAppointments() {
     const container = document.getElementById('appointmentsContainer');
     const select = document.getElementById('apptSelect');
 
-    select.innerHTML = '<option value="">— None —</option>';
+    select.innerHTML = '<option value="">- None -</option>';
 
     if (!data.appointments || data.appointments.length === 0) {
         container.innerHTML = '<p class="text-muted">No appointments yet. <a href="/search.html">Book one!</a></p>';

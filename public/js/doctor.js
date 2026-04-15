@@ -32,6 +32,7 @@ async function init() {
     document.getElementById('userName').textContent = 'Dr. ' + me.user.full_name;
     loadAppointments();
     loadDocuments();
+    loadPatientOptions();
 }
 
 //
@@ -96,8 +97,10 @@ function renderAppointments() {
                         <button class="btn btn-danger btn-sm status-btn" data-id="${a.id}" data-status="cancelled">Cancel</button>
                     </div>` : ''}
                     ${a.status === 'confirmed' ? `
-                    <button class="btn btn-primary btn-sm mt-2 status-btn" data-id="${a.id}" data-status="completed">Mark Completed</button>
-                    ` : ''}
+                    <div class="d-flex gap-2 mt-2">
+                        <button class="btn btn-primary btn-sm status-btn" data-id="${a.id}" data-status="completed">Mark Completed</button>
+                        <button class="btn btn-danger btn-sm status-btn" data-id="${a.id}" data-status="cancelled">Cancel</button>
+                    </div>` : ''}
                 </div>
             </div>`;
     });
@@ -170,6 +173,53 @@ async function loadDocuments() {
     html += '</div>';
     container.innerHTML = html;
 }
+
+async function loadPatientOptions() {
+    const response = await fetch('/api/admin/patients').then(r => r.json()).catch(() => null);
+    if (!response) return;
+    const select = document.getElementById('bookPatient');
+    (response.patients || []).forEach(patient => {
+        const option = document.createElement('option');
+        option.value = patient.id;
+        option.textContent = `${patient.full_name} (${patient.email})`;
+        select.appendChild(option);
+    });
+}
+
+document.getElementById('bookSubmitBtn').addEventListener('click', async () => {
+    const patientId = document.getElementById('bookPatient').value;
+    const scheduledAt = document.getElementById('bookDate').value;
+    const notes = document.getElementById('bookNotes').value.trim();
+    const alertEl = document.getElementById('bookAlert');
+
+    if (!patientId || !scheduledAt) {
+        alertEl.className = 'alert alert-danger';
+        alertEl.textContent = 'Please select a patient and date.';
+        alertEl.classList.remove('d-none');
+        return;
+    }
+
+    const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patient_id: parseInt(patientId), scheduled_at: scheduledAt, notes: notes || undefined }),
+    });
+    const result = await response.json();
+
+    if (response.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('bookModal')).hide();
+        document.getElementById('bookPatient').value = '';
+        document.getElementById('bookDate').value = '';
+        document.getElementById('bookNotes').value = '';
+        alertEl.classList.add('d-none');
+        showAlert('Appointment booked successfully', 'success');
+        loadAppointments();
+    } else {
+        alertEl.className = 'alert alert-danger';
+        alertEl.textContent = result.error || 'Booking failed';
+        alertEl.classList.remove('d-none');
+    }
+});
 
 document.getElementById('statusFilter').addEventListener('change', renderAppointments);
 document.getElementById('refreshBtn').addEventListener('click', loadAppointments);

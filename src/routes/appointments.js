@@ -85,28 +85,31 @@ router.get('/', requireAuth, requireApproved, (req, res) => {
 //
 // FUNCTION    : POST /api/appointments
 // DESCRIPTION :
-//   Books a new appointment for the authenticated patient. Validates the
-//   doctor ID and ensures the scheduled date is in the future. Verifies that
-//   the target doctor exists and is approved before inserting the record.
-//   Writes an APPOINTMENT_BOOKED entry to the audit log on success.
+//   Books a new appointment. Patients book for themselves by supplying a
+//   doctor_id. Doctors book on behalf of a patient (patient_id required) and
+//   are automatically assigned as the doctor. Admins may supply both patient_id
+//   and doctor_id to book any combination. Validates that the scheduled date is
+//   in the future and that the target doctor is approved.
 // PARAMETERS  :
-//   number body.doctor_id    : ID of the doctor to book with
+//   number body.doctor_id    : doctor to book with (required for patients and admins)
+//   number body.patient_id   : patient to book for (required for doctors and admins)
 //   string body.scheduled_at : ISO 8601 datetime string (must be in the future)
 //   string body.notes        : optional appointment notes (max 500 chars)
 // RETURNS     :
 //   201 JSON : success message and new appointment ID
 //   400 JSON : validation error or past date
 //   401 JSON : not authenticated
-//   403 JSON : not a patient or account not approved
-//   404 JSON : doctor not found or not approved
+//   403 JSON : account not approved
+//   404 JSON : doctor or patient not found
 //
 router.post(
     '/',
     requireAuth,
     requireApproved,
-    requireRole('patient'),
+    requireRole('patient', 'doctor', 'admin'),
     [
-        body('doctor_id').isInt({ min: 1 }).withMessage('Valid doctor required'),
+        body('doctor_id').optional().isInt({ min: 1 }).withMessage('Valid doctor required'),
+        body('patient_id').optional().isInt({ min: 1 }).withMessage('Valid patient required'),
         body('scheduled_at')
             .isISO8601().withMessage('Invalid date format')
             .custom(val => {
@@ -119,28 +122,61 @@ router.post(
     ],
     validate,
     (req, res) => {
-        const { doctor_id, scheduled_at, notes } = req.body;
-        const patient_id = req.session.user.id;
+        const { scheduled_at, notes } = req.body;
+        const { id: userId, role } = req.session.user;
 
-        /* Verify the target doctor exists and their account is approved.
-         * Unapproved doctors should not be bookable even if their ID is known. */
-        const doctor = db.prepare(`
-            SELECT d.id FROM doctors d
-            JOIN users u ON u.id = d.user_id
-            WHERE d.id = ? AND u.is_approved = 1
-        `).get(doctor_id);
+        let patientId, doctorRecord;
 
-        if (!doctor) {
-            return res.status(404).json({ error: 'Doctor not found' });
+        if (role === 'patient') {
+            patientId = userId;
+            doctorRecord = db.prepare(`
+                SELECT d.id FROM doctors d
+                JOIN users u ON u.id = d.user_id
+                WHERE d.id = ? AND u.is_approved = 1
+            `).get(req.body.doctor_id);
+            if (!doctorRecord) {
+                return res.status(404).json({ error: 'Doctor not found' });
+            }
+        } else if (role === 'doctor') {
+            if (!req.body.patient_id) {
+                return res.status(400).json({ error: 'patient_id is required' });
+            }
+            patientId = parseInt(req.body.patient_id);
+            const patient = db.prepare('SELECT id FROM users WHERE id = ? AND role = ?').get(patientId, 'patient');
+            if (!patient) {
+                return res.status(404).json({ error: 'Patient not found' });
+            }
+            doctorRecord = db.prepare('SELECT id FROM doctors WHERE user_id = ?').get(userId);
+            if (!doctorRecord) {
+                return res.status(404).json({ error: 'Doctor profile not found' });
+            }
+        } else {
+            // Admin: must supply both patient_id and doctor_id
+            if (!req.body.patient_id || !req.body.doctor_id) {
+                return res.status(400).json({ error: 'patient_id and doctor_id are required' });
+            }
+            patientId = parseInt(req.body.patient_id);
+            const patient = db.prepare('SELECT id FROM users WHERE id = ? AND role = ?').get(patientId, 'patient');
+            if (!patient) {
+                return res.status(404).json({ error: 'Patient not found' });
+            }
+            doctorRecord = db.prepare(`
+                SELECT d.id FROM doctors d
+                JOIN users u ON u.id = d.user_id
+                WHERE d.id = ? AND u.is_approved = 1
+            `).get(req.body.doctor_id);
+            if (!doctorRecord) {
+                return res.status(404).json({ error: 'Doctor not found' });
+            }
         }
 
         const result = db.prepare(`
             INSERT INTO appointments (patient_id, doctor_id, scheduled_at, notes)
             VALUES (?, ?, ?, ?)
-        `).run(patient_id, doctor.id, scheduled_at, notes || null);
+        `).run(patientId, doctorRecord.id, scheduled_at, notes || null);
 
-        log(patient_id, 'APPOINTMENT_BOOKED', req.ip, req.headers['user-agent'],
-            `appointment_id=${result.lastInsertRowid}`);
+        log(userId, 'APPOINTMENT_BOOKED', req.ip, req.headers['user-agent'],
+            `appointment_id=${result.lastInsertRowid} booked_by=${role}`);
 
         res.status(201).json({ message: 'Appointment booked successfully', id: result.lastInsertRowid });
     }
