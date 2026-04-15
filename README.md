@@ -7,7 +7,7 @@ A secure client-server web application for booking clinic appointments, built fo
 - **Frontend:** HTML5, Bootstrap 5, Vanilla JavaScript
 - **Backend:** Node.js, Express
 - **Database:** SQLite (via `better-sqlite3`)
-- **Security:** `helmet`, `bcrypt`, `express-session`, `express-rate-limit`, `express-validator`, `multer`, `file-type`
+- **Security:** `helmet`, `bcrypt`, `cookie-session`, `express-rate-limit`, `express-validator`, `multer`, `file-type`
 
 ## Setup
 
@@ -38,16 +38,18 @@ The app will be available at **http://localhost:3000**
 > These credentials exist only in the seeded demo database and are listed here for evaluation purposes. In a real deployment the seeder would not be used; all accounts would be created through the registration flow with strong, unique passwords.
 
 
-| Role    | Email                              | Password        |
-|---------|------------------------------------|-----------------|
-| Admin   | c.rivera@westside-clinic.com       | Clinic#2024     |
-| Doctor  | l.chen@westside-clinic.com         | DrChen#2024     |
-| Doctor  | m.okonkwo@westside-clinic.com      | DrOkonkwo#2024  |
-| Doctor  | s.patel@westside-clinic.com        | DrPatel#2024    |
-| Doctor  | r.morales@westside-clinic.com      | DrMorales#2024  |
-| Patient | james.whitfield@gmail.com          | Whitfield#99    |
-| Patient | ana.gutierrez@hotmail.com          | Gutierrez#44    |
-| Patient | tom.brennan@outlook.com            | Brennan#77      |
+| Role            | Email               | Password       |
+|-----------------|---------------------|----------------|
+| Admin           | admin@clinic.com    | Admin#2026     |
+| Doctor          | chen@clinic.com     | Doctor#2026    |
+| Doctor          | okonkwo@clinic.com  | Doctor#2026    |
+| Doctor          | patel@clinic.com    | Doctor#2026    |
+| Doctor          | morales@clinic.com  | Doctor#2026    |
+| Doctor (pending)| nguyen@clinic.com   | Doctor#2026    |
+| Doctor (pending)| santos@clinic.com   | Doctor#2026    |
+| Patient         | james@clinic.com    | Patient#2026   |
+| Patient         | ana@clinic.com      | Patient#2026   |
+| Patient         | tom@clinic.com      | Patient#2026   |
 
 ## Features
 
@@ -65,15 +67,17 @@ The app will be available at **http://localhost:3000**
 
 ### Admin
 - Approve or suspend doctor accounts
-- View all appointments
-- View audit log
+- View and update status of all appointments
+- View all uploaded documents
+- View and filter audit log
+- Dashboard stats (patients, pending doctors, appointments, documents)
 
 ## Security Highlights
 
 | Control | Implementation |
 |---|---|
 | Password hashing | bcrypt (cost 12) |
-| Session security | `httpOnly`, `sameSite=lax`, session regeneration on login |
+| Session security | `httpOnly`, `sameSite=lax`, signed cookie session, cleared on login |
 | SQL injection | Prepared statements only (no string concatenation) |
 | Input validation | `express-validator` on all endpoints |
 | File upload safety | MIME + extension whitelist, 2 MB limit, UUID filenames, stored outside `public/` |
