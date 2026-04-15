@@ -9,45 +9,67 @@ async function seed() {
     console.log('Seeding database...');
 
     // ---- Admin ----
-    const adminHash = await bcrypt.hash('Clinic#2024', SALT_ROUNDS);
+    const adminHash = await bcrypt.hash('Admin#2026', SALT_ROUNDS);
     db.prepare(`
         INSERT OR IGNORE INTO users (email, password_hash, role, full_name, is_approved)
         VALUES (?, ?, 'admin', 'Carlos Rivera', 1)
-    `).run('c.rivera@westside-clinic.com', adminHash);
+    `).run('admin@clinic.com', adminHash);
 
     // ---- Doctors ----
     const doctors = [
         {
-            email: 'l.chen@westside-clinic.com',
+            email: 'chen@clinic.com',
             name: 'Laura Chen',
             specialty: 'General Practice',
             license: 'GP-4821',
             bio: 'Board-certified family physician with 12 years of experience in preventive care and chronic disease management.',
-            password: 'DrChen#2024',
+            password: 'Doctor#2026',
+            approved: 1,
         },
         {
-            email: 'm.okonkwo@westside-clinic.com',
+            email: 'okonkwo@clinic.com',
             name: 'Michael Okonkwo',
             specialty: 'Cardiology',
             license: 'CA-3305',
             bio: 'Interventional cardiologist specializing in hypertension, arrhythmia, and heart failure. Fellow of the American College of Cardiology.',
-            password: 'DrOkonkwo#2024',
+            password: 'Doctor#2026',
+            approved: 1,
         },
         {
-            email: 's.patel@westside-clinic.com',
+            email: 'patel@clinic.com',
             name: 'Sunita Patel',
             specialty: 'Pediatrics',
             license: 'PE-7762',
             bio: 'Dedicated to children\'s health from newborns to adolescents. Special interest in developmental milestones and vaccinations.',
-            password: 'DrPatel#2024',
+            password: 'Doctor#2026',
+            approved: 1,
         },
         {
-            email: 'r.morales@westside-clinic.com',
+            email: 'morales@clinic.com',
             name: 'Rafael Morales',
             specialty: 'Orthopedics',
             license: 'OR-1194',
             bio: 'Sports medicine and orthopedic surgery specialist. Experienced in joint replacement and minimally invasive procedures.',
-            password: 'DrMorales#2024',
+            password: 'Doctor#2026',
+            approved: 1,
+        },
+        {
+            email: 'nguyen@clinic.com',
+            name: 'Emily Nguyen',
+            specialty: 'Dermatology',
+            license: 'DE-2231',
+            bio: 'Dermatologist with a focus on skin cancer screening and chronic skin conditions.',
+            password: 'Doctor#2026',
+            approved: 0,
+        },
+        {
+            email: 'santos@clinic.com',
+            name: 'Marco Santos',
+            specialty: 'Neurology',
+            license: 'NE-8843',
+            bio: 'Neurologist specializing in migraines, epilepsy, and multiple sclerosis.',
+            password: 'Doctor#2026',
+            approved: 0,
         },
     ];
 
@@ -56,8 +78,8 @@ async function seed() {
         const hash = await bcrypt.hash(doc.password, SALT_ROUNDS);
         const res = db.prepare(`
             INSERT OR IGNORE INTO users (email, password_hash, role, full_name, is_approved)
-            VALUES (?, ?, 'doctor', ?, 1)
-        `).run(doc.email, hash, doc.name);
+            VALUES (?, ?, 'doctor', ?, ?)
+        `).run(doc.email, hash, doc.name, doc.approved);
 
         if (res.changes > 0) {
             const docRes = db.prepare(`
@@ -75,9 +97,9 @@ async function seed() {
 
     // ---- Patients ----
     const patients = [
-        { email: 'james.whitfield@gmail.com',   name: 'James Whitfield',   password: 'Whitfield#99' },
-        { email: 'ana.gutierrez@hotmail.com',    name: 'Ana Gutierrez',     password: 'Gutierrez#44' },
-        { email: 'tom.brennan@outlook.com',      name: 'Thomas Brennan',    password: 'Brennan#77' },
+        { email: 'james@clinic.com', name: 'James Whitfield',  password: 'Patient#2026' },
+        { email: 'ana@clinic.com',   name: 'Ana Gutierrez',    password: 'Patient#2026' },
+        { email: 'tom@clinic.com',   name: 'Thomas Brennan',   password: 'Patient#2026' },
     ];
 
     const patientIds = [];
@@ -112,14 +134,16 @@ async function seed() {
     }
 
     console.log('\nDemo accounts:');
-    console.log('  Admin   — c.rivera@westside-clinic.com    / Clinic#2024');
-    console.log('  Doctor  — l.chen@westside-clinic.com      / DrChen#2024');
-    console.log('  Doctor  — m.okonkwo@westside-clinic.com   / DrOkonkwo#2024');
-    console.log('  Doctor  — s.patel@westside-clinic.com     / DrPatel#2024');
-    console.log('  Doctor  — r.morales@westside-clinic.com   / DrMorales#2024');
-    console.log('  Patient — james.whitfield@gmail.com       / Whitfield#99');
-    console.log('  Patient — ana.gutierrez@hotmail.com       / Gutierrez#44');
-    console.log('  Patient — tom.brennan@outlook.com         / Brennan#77');
+    console.log('  Admin          — admin@clinic.com    / Admin#2026');
+    console.log('  Doctor         — chen@clinic.com     / Doctor#2026');
+    console.log('  Doctor         — okonkwo@clinic.com  / Doctor#2026');
+    console.log('  Doctor         — patel@clinic.com    / Doctor#2026');
+    console.log('  Doctor         — morales@clinic.com  / Doctor#2026');
+    console.log('  Doctor(pending)— nguyen@clinic.com   / Doctor#2026');
+    console.log('  Doctor(pending)— santos@clinic.com   / Doctor#2026');
+    console.log('  Patient        — james@clinic.com    / Patient#2026');
+    console.log('  Patient        — ana@clinic.com      / Patient#2026');
+    console.log('  Patient        — tom@clinic.com      / Patient#2026');
 }
 
 // Run directly via `npm run seed`, or export for auto-seeding on Vercel
