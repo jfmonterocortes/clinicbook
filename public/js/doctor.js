@@ -76,30 +76,30 @@ function renderAppointments() {
     }
 
     let html = '<div class="row g-3">';
-    appts.forEach(a => {
-        const date = new Date(a.scheduled_at.replace(' ', 'T') + 'Z').toLocaleString();
+    appts.forEach(appt => {
+        const date = new Date(appt.scheduled_at.replace(' ', 'T') + 'Z').toLocaleString();
 
         html += `
             <div class="col-md-6">
                 <div class="card p-3">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="fw-semibold">${esc(a.patient_name)}</div>
-                            <div class="text-muted small">${esc(a.patient_email)}</div>
+                            <div class="fw-semibold">${esc(appt.patient_name)}</div>
+                            <div class="text-muted small">${esc(appt.patient_email)}</div>
                             <div class="small mt-1">${date}</div>
-                            ${a.notes ? `<div class="small text-muted mt-1">"${esc(a.notes)}"</div>` : ''}
+                            ${appt.notes ? `<div class="small text-muted mt-1">"${esc(appt.notes)}"</div>` : ''}
                         </div>
-                        <span class="badge bg-${statusColor(a.status)}">${a.status}</span>
+                        <span class="badge bg-${statusColor(appt.status)}">${appt.status}</span>
                     </div>
-                    ${a.status === 'pending' ? `
+                    ${appt.status === 'pending' ? `
                     <div class="d-flex gap-2 mt-2">
-                        <button class="btn btn-success btn-sm status-btn" data-id="${a.id}" data-status="confirmed">Confirm</button>
-                        <button class="btn btn-danger btn-sm status-btn" data-id="${a.id}" data-status="cancelled">Cancel</button>
+                        <button class="btn btn-success btn-sm status-btn" data-id="${appt.id}" data-status="confirmed">Confirm</button>
+                        <button class="btn btn-danger btn-sm status-btn" data-id="${appt.id}" data-status="cancelled">Cancel</button>
                     </div>` : ''}
-                    ${a.status === 'confirmed' ? `
+                    ${appt.status === 'confirmed' ? `
                     <div class="d-flex gap-2 mt-2">
-                        <button class="btn btn-primary btn-sm status-btn" data-id="${a.id}" data-status="completed">Mark Completed</button>
-                        <button class="btn btn-danger btn-sm status-btn" data-id="${a.id}" data-status="cancelled">Cancel</button>
+                        <button class="btn btn-primary btn-sm status-btn" data-id="${appt.id}" data-status="completed">Mark Completed</button>
+                        <button class="btn btn-danger btn-sm status-btn" data-id="${appt.id}" data-status="cancelled">Cancel</button>
                     </div>` : ''}
                 </div>
             </div>`;
@@ -160,20 +160,31 @@ async function loadDocuments() {
     }
 
     let html = '<div class="list-group">';
-    data.documents.forEach(d => {
+    data.documents.forEach(doc => {
         html += `
             <div class="list-group-item d-flex justify-content-between align-items-center">
                 <div>
-                    <div>${esc(d.original_name)}</div>
-                    <div class="text-muted small">Patient: ${esc(d.patient_name)} &nbsp;|&nbsp; ${new Date(d.uploaded_at.replace(' ', 'T') + 'Z').toLocaleDateString()}</div>
+                    <div>${esc(doc.original_name)}</div>
+                    <div class="text-muted small">Patient: ${esc(doc.patient_name)} &nbsp;|&nbsp; ${new Date(doc.uploaded_at.replace(' ', 'T') + 'Z').toLocaleDateString()}</div>
                 </div>
-                <a href="/api/uploads/${d.id}/download" class="btn btn-sm btn-outline-primary">Download</a>
+                <a href="/api/uploads/${doc.id}/download" class="btn btn-sm btn-outline-primary">Download</a>
             </div>`;
     });
     html += '</div>';
     container.innerHTML = html;
 }
 
+//
+// FUNCTION    : loadPatientOptions
+// DESCRIPTION :
+//   Fetches all approved patients from the API and populates the patient
+//   dropdown in the Book Appointment modal. Called once on page load so
+//   the dropdown is ready before the doctor opens the modal.
+// PARAMETERS  :
+//   none
+// RETURNS     :
+//   void (async)
+//
 async function loadPatientOptions() {
     const response = await fetch('/api/admin/patients').then(r => r.json()).catch(() => null);
     if (!response) return;
@@ -186,6 +197,19 @@ async function loadPatientOptions() {
     });
 }
 
+//
+// FUNCTION    : bookSubmitBtn click handler
+// DESCRIPTION :
+//   Reads the patient, date, and notes fields from the Book Appointment
+//   modal and posts a new appointment to the API on behalf of the selected
+//   patient. The doctor is identified automatically by the server from the
+//   active session. Displays a success alert and reloads appointments on
+//   success, or shows the server error message on failure.
+// PARAMETERS  :
+//   none (reads form values from the DOM)
+// RETURNS     :
+//   void (async)
+//
 document.getElementById('bookSubmitBtn').addEventListener('click', async () => {
     const patientId = document.getElementById('bookPatient').value;
     const scheduledAt = document.getElementById('bookDate').value;
@@ -239,13 +263,13 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 // RETURNS     :
 //   string : Bootstrap colour class suffix (e.g. 'warning text-dark', 'success')
 //
-function statusColor(s) {
+function statusColor(appointmentStatus) {
     return {
         pending: 'warning text-dark',
         confirmed: 'success',
         cancelled: 'danger',
         completed: 'primary'
-    }[s] || 'secondary';
+    }[appointmentStatus] || 'secondary';
 }
 
 //

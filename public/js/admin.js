@@ -135,11 +135,11 @@ async function toggleApproval(userId, approve) {
 }
 
 //
-// FUNCTION    : loadAppointments
+// FUNCTION    : loadStats
 // DESCRIPTION :
-//   Fetches all appointments in the system from the admin API and renders
-//   them in the appointments table with patient name, doctor name, specialty,
-//   scheduled time, and current status.
+//   Fetches the summary statistics from the admin API and updates the four
+//   stat cards at the top of the page: total patients, pending doctors,
+//   total appointments, and total uploaded documents.
 // PARAMETERS  :
 //   none
 // RETURNS     :
@@ -154,6 +154,17 @@ async function loadStats() {
     document.getElementById('statDocuments').textContent = data.documents;
 }
 
+//
+// FUNCTION    : loadAppointments
+// DESCRIPTION :
+//   Fetches all appointments in the system from the admin API and renders
+//   them in the appointments table. Each row includes a status dropdown that
+//   lets the admin change the appointment status directly from the table.
+// PARAMETERS  :
+//   none
+// RETURNS     :
+//   void (async)
+//
 async function loadAppointments() {
     const res = await fetch('/api/admin/appointments');
     const data = await res.json();
@@ -203,6 +214,17 @@ async function loadAppointments() {
     });
 }
 
+//
+// FUNCTION    : loadDocuments
+// DESCRIPTION :
+//   Fetches all uploaded documents from the admin API and renders them
+//   in the documents table. Each row shows the filename, uploader name and
+//   email, MIME type, file size, upload timestamp, and a download link.
+// PARAMETERS  :
+//   none
+// RETURNS     :
+//   void (async)
+//
 async function loadDocuments() {
     const res = await fetch('/api/admin/documents');
     const data = await res.json();
@@ -231,19 +253,19 @@ async function loadDocuments() {
     });
 }
 
+let allLogs = [];
+
 //
 // FUNCTION    : loadAudit
 // DESCRIPTION :
-//   Fetches the 200 most recent audit log entries from the admin API and
-//   renders them in the audit table. Each row shows the timestamp, user,
-//   action code, IP address, and detail string.
+//   Fetches the 200 most recent audit log entries from the admin API,
+//   stores them in allLogs so the filter can re-render without a new
+//   request, and calls renderAudit to display the full list.
 // PARAMETERS  :
 //   none
 // RETURNS     :
 //   void (async)
 //
-let allLogs = [];
-
 async function loadAudit() {
     const res = await fetch('/api/admin/audit');
     const data = await res.json();
@@ -251,6 +273,18 @@ async function loadAudit() {
     renderAudit(allLogs);
 }
 
+//
+// FUNCTION    : renderAudit
+// DESCRIPTION :
+//   Renders the provided audit log entries into the audit table. Receives
+//   either the full allLogs array or a pre-filtered subset from the
+//   auditFilter input handler. All user-supplied strings pass through esc()
+//   to prevent stored XSS attacks.
+// PARAMETERS  :
+//   Array logs : array of audit log entry objects to render
+// RETURNS     :
+//   void
+//
 function renderAudit(logs) {
     const tbody = document.getElementById('auditTable');
     tbody.innerHTML = '';
@@ -267,6 +301,18 @@ function renderAudit(logs) {
     });
 }
 
+//
+// FUNCTION    : auditFilter input handler
+// DESCRIPTION :
+//   Filters the cached allLogs array as the admin types in the filter
+//   input. Matches against the action code, user name, detail string, and
+//   IP address. Calls renderAudit with the filtered subset so only matching
+//   rows are shown without making a new network request.
+// PARAMETERS  :
+//   none (reads this.value from the input event target)
+// RETURNS     :
+//   void
+//
 document.getElementById('auditFilter').addEventListener('input', function () {
     const filterText = this.value.toLowerCase();
     if (!filterText) { renderAudit(allLogs); return; }
@@ -278,6 +324,18 @@ document.getElementById('auditFilter').addEventListener('input', function () {
     ));
 });
 
+//
+// FUNCTION    : loadBookingDropdowns
+// DESCRIPTION :
+//   Fetches the list of approved patients and approved doctors from the API
+//   in parallel and populates the patient and doctor dropdowns in the Book
+//   Appointment modal. Called once on page load so the dropdowns are ready
+//   before the admin opens the modal.
+// PARAMETERS  :
+//   none
+// RETURNS     :
+//   void (async)
+//
 async function loadBookingDropdowns() {
     const [patientsResponse, doctorsResponse] = await Promise.all([
         fetch('/api/admin/patients').then(r => r.json()).catch(() => null),
@@ -301,6 +359,19 @@ async function loadBookingDropdowns() {
     });
 }
 
+//
+// FUNCTION    : bookSubmitBtn click handler
+// DESCRIPTION :
+//   Reads the patient, doctor, date, and notes fields from the Book
+//   Appointment modal and posts a new appointment to the API. On success,
+//   closes the modal, clears the form, shows a success alert, and reloads
+//   both the appointments table and the stat cards. On failure, shows the
+//   server error message inside the modal.
+// PARAMETERS  :
+//   none (reads form values from the DOM)
+// RETURNS     :
+//   void (async)
+//
 document.getElementById('bookSubmitBtn').addEventListener('click', async () => {
     const patientId = document.getElementById('bookPatient').value;
     const doctorId = document.getElementById('bookDoctor').value;
@@ -344,6 +415,16 @@ document.getElementById('bookSubmitBtn').addEventListener('click', async () => {
     }
 });
 
+//
+// FUNCTION    : logoutBtn click handler
+// DESCRIPTION :
+//   Sends a POST request to the logout API endpoint to destroy the server
+//   session, then redirects the browser to the login page.
+// PARAMETERS  :
+//   none
+// RETURNS     :
+//   void (async)
+//
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     await fetch('/api/logout', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
     location.href = '/index.html';

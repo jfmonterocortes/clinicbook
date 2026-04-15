@@ -65,10 +65,10 @@ async function loadSpecialties() {
     const data = await res.json();
     const sel = document.getElementById('searchSpecialty');
 
-    (data.specialties || []).forEach(s => {
+    (data.specialties || []).forEach(specialtyName => {
         const opt = document.createElement('option');
-        opt.value = s;
-        opt.textContent = s;
+        opt.value = specialtyName;
+        opt.textContent = specialtyName;
         sel.appendChild(opt);
     });
 }
@@ -123,22 +123,22 @@ function renderDoctors(doctors) {
     }
 
     let html = '<div class="row g-3">';
-    doctors.forEach(d => {
+    doctors.forEach(doctor => {
         /* Store the doctor name in a JS map keyed by ID. Only the integer ID
          * goes into the data-id attribute – safe because integers cannot
          * contain quote characters or HTML-injectable content. */
-        doctorNames[d.id] = d.full_name;
+        doctorNames[doctor.id] = doctor.full_name;
 
         html += `
             <div class="col-md-6">
                 <div class="card doctor-card p-3">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="fw-semibold">Dr. ${esc(d.full_name)}</div>
-                            <span class="badge bg-secondary">${esc(d.specialty)}</span>
-                            ${d.bio ? `<p class="small text-muted mt-2 mb-1">${esc(d.bio)}</p>` : ''}
+                            <div class="fw-semibold">Dr. ${esc(doctor.full_name)}</div>
+                            <span class="badge bg-secondary">${esc(doctor.specialty)}</span>
+                            ${doctor.bio ? `<p class="small text-muted mt-2 mb-1">${esc(doctor.bio)}</p>` : ''}
                         </div>
-                        <button class="btn btn-primary btn-sm book-btn" data-id="${d.id}">Book</button>
+                        <button class="btn btn-primary btn-sm book-btn" data-id="${doctor.id}">Book</button>
                     </div>
                 </div>
             </div>`;

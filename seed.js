@@ -1,10 +1,34 @@
-// Seed script — run once: npm run seed
+//
+// FILE        : seed.js
+// PROJECT     : SECU2000 - ClinicBook : Secure Clinic Booking System
+// PROGRAMMER  : Juan Felipe Montero Cortes
+// FIRST VERSION: 2026-04-11
+// DESCRIPTION :
+//   Populates the SQLite database with demo user accounts (admin, doctors,
+//   patients) and sample appointments used for development and live
+//   demonstrations. All passwords are bcrypt-hashed before insertion.
+//   INSERT OR IGNORE prevents duplicate rows on repeat runs.
+//   Run with: npm run seed
+//
+
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const db = require('./src/db');
 
 const SALT_ROUNDS = 12;
 
+//
+// FUNCTION    : seed
+// DESCRIPTION :
+//   Creates demo user accounts (one admin, six doctors, three patients) and
+//   a set of sample appointments. All passwords are bcrypt-hashed at cost
+//   factor 12 before insertion. INSERT OR IGNORE prevents duplicate rows
+//   when the function is called multiple times.
+// PARAMETERS  :
+//   none
+// RETURNS     :
+//   Promise<void> : resolves when all database inserts are complete
+//
 async function seed() {
     console.log('Seeding database...');
 
@@ -103,13 +127,13 @@ async function seed() {
     ];
 
     const patientIds = [];
-    for (const p of patients) {
-        const hash = await bcrypt.hash(p.password, SALT_ROUNDS);
+    for (const patientData of patients) {
+        const hash = await bcrypt.hash(patientData.password, SALT_ROUNDS);
         const res = db.prepare(`
             INSERT OR IGNORE INTO users (email, password_hash, role, full_name, is_approved)
             VALUES (?, ?, 'patient', ?, 1)
-        `).run(p.email, hash, p.name);
-        patientIds.push(res.lastInsertRowid || db.prepare('SELECT id FROM users WHERE email = ?').get(p.email).id);
+        `).run(patientData.email, hash, patientData.name);
+        patientIds.push(res.lastInsertRowid || db.prepare('SELECT id FROM users WHERE email = ?').get(patientData.email).id);
     }
 
     // ---- Sample appointments (only insert if appointments table is empty) ----
@@ -124,11 +148,11 @@ async function seed() {
             { patient: patientIds[2], doctor: doctorIds[0], date: '2026-03-28 15:00', status: 'cancelled', notes: null },
         ];
 
-        for (const a of appts) {
+        for (const appt of appts) {
             db.prepare(`
                 INSERT INTO appointments (patient_id, doctor_id, scheduled_at, status, notes)
                 VALUES (?, ?, ?, ?, ?)
-            `).run(a.patient, a.doctor, a.date, a.status, a.notes);
+            `).run(appt.patient, appt.doctor, appt.date, appt.status, appt.notes);
         }
         console.log(`Inserted ${appts.length} sample appointments.`);
     }
