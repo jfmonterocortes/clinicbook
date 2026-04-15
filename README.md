@@ -51,6 +51,20 @@ The app will be available at **http://localhost:3000**
 | Patient         | ana@clinic.com      | Patient#2026   |
 | Patient         | tom@clinic.com      | Patient#2026   |
 
+## Screenshots
+
+| Patient Dashboard | Doctor Dashboard |
+|---|---|
+| ![Patient Dashboard](public/screenshots/PatientInterface.png) | ![Doctor Dashboard](public/screenshots/DoctorInterface.png) |
+
+| Admin - Users | Admin - Appointments |
+|---|---|
+| ![Admin Users](public/screenshots/Admin_users.png) | ![Admin Appointments](public/screenshots/Admin_appointments.png) |
+
+| Admin - Documents | Admin - Audit Log |
+|---|---|
+| ![Admin Documents](public/screenshots/Admin_documents.png) | ![Admin Audit Log](public/screenshots/Admin_auditlog.png) |
+
 ## Features
 
 ### Patient

@@ -265,20 +265,23 @@ tr:hover td { background: rgba(22,27,34,0.6); }
   <div class="slide" id="slide-3">
     <div class="slide-tag">Project</div>
     <h2>Clinic<span class="accent">Book</span></h2>
-    <div class="two-col">
-      <ul class="bullets">
-        <li>Role-based web application with realistic security controls</li>
-        <li>Patients: search doctors, book appointments, upload documents</li>
-        <li>Doctors: manage schedule, book for patients, download documents</li>
-        <li>Admins: approve accounts, book appointments, monitor audit log</li>
-        <li>Doctor approval workflow - new doctors wait for admin approval</li>
-      </ul>
-      <ul class="bullets">
-        <li><span style="color:var(--cyan);">Backend:</span> Node.js + Express</li>
-        <li><span style="color:var(--cyan);">Database:</span> SQLite (better-sqlite3)</li>
-        <li><span style="color:var(--cyan);">Frontend:</span> HTML + Bootstrap 5 + JavaScript</li>
-        <li><span style="color:var(--cyan);">Security:</span> bcrypt, helmet, cookie-session, express-validator, multer, file-type</li>
-      </ul>
+    <div class="two-col" style="align-items:start;">
+      <div>
+        <ul class="bullets" style="margin-bottom:16px;">
+          <li>Patients: search doctors, book appointments, upload documents</li>
+          <li>Doctors: manage schedule, book for patients, download documents</li>
+          <li>Admins: approve accounts, book appointments, monitor audit log</li>
+          <li>Node.js + Express &nbsp;·&nbsp; SQLite &nbsp;·&nbsp; HTML + Bootstrap 5</li>
+        </ul>
+        <img src="/screenshots/PatientInterface.png" alt="Patient dashboard"
+             style="width:100%; border-radius:6px; border:1px solid var(--border);">
+      </div>
+      <div>
+        <img src="/screenshots/DoctorInterface.png" alt="Doctor dashboard"
+             style="width:100%; border-radius:6px; border:1px solid var(--border); margin-bottom:16px;">
+        <img src="/screenshots/Admin_users.png" alt="Admin panel"
+             style="width:100%; border-radius:6px; border:1px solid var(--border);">
+      </div>
     </div>
   </div>
 
@@ -457,17 +460,39 @@ tr:hover td { background: rgba(22,27,34,0.6); }
   </div>
 
   <!-- SLIDE 13 - Demo -->
-  <div class="slide" id="slide-13" style="justify-content:center; align-items:center; text-align:center;">
-    <div>
-      <div class="slide-tag" style="text-align:center;">Up Next</div>
-      <div class="demo-big">Demo</div>
-      <div class="demo-grid" style="margin:0 auto;">
-        <div class="demo-item"><span class="demo-num">01</span> Patient registration and booking</div>
-        <div class="demo-item"><span class="demo-num">02</span> Admin approval and audit log</div>
-        <div class="demo-item"><span class="demo-num">03</span> Doctor booking and documents</div>
-        <div class="demo-item"><span class="demo-num">04</span> Rate limiter in action</div>
-        <div class="demo-item"><span class="demo-num">05</span> SQL injection attempt</div>
-        <div class="demo-item"><span class="demo-num">06</span> IDOR + unauthorized access (403)</div>
+  <div class="slide" id="slide-13">
+    <div class="slide-tag">Up Next</div>
+    <h2><span class="accent">Live Demo</span></h2>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:8px;">
+      <div style="text-align:center;">
+        <img src="/screenshots/PatientInterface.png" alt="Patient"
+             style="width:100%; border-radius:6px; border:1px solid var(--border);">
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Patient Dashboard</div>
+      </div>
+      <div style="text-align:center;">
+        <img src="/screenshots/DoctorInterface.png" alt="Doctor"
+             style="width:100%; border-radius:6px; border:1px solid var(--border);">
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Doctor Dashboard</div>
+      </div>
+      <div style="text-align:center;">
+        <img src="/screenshots/Admin_users.png" alt="Admin Users"
+             style="width:100%; border-radius:6px; border:1px solid var(--border);">
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Admin - Users</div>
+      </div>
+      <div style="text-align:center;">
+        <img src="/screenshots/Admin_appointments.png" alt="Admin Appointments"
+             style="width:100%; border-radius:6px; border:1px solid var(--border);">
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Admin - Appointments</div>
+      </div>
+      <div style="text-align:center;">
+        <img src="/screenshots/Admin_documents.png" alt="Admin Documents"
+             style="width:100%; border-radius:6px; border:1px solid var(--border);">
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Admin - Documents</div>
+      </div>
+      <div style="text-align:center;">
+        <img src="/screenshots/Admin_auditlog.png" alt="Audit Log"
+             style="width:100%; border-radius:6px; border:1px solid var(--border);">
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Admin - Audit Log</div>
       </div>
     </div>
   </div>
